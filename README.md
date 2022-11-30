@@ -1,2 +1,2 @@
-# ModelAttributesManager
-Demonstration of how to make a "model" class with custom attributes and how to inspect them...
+# CueRomovePreGap
+Remove PreGap from a CUE file
