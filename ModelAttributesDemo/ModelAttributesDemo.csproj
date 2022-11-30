@@ -54,7 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ModelExample.cs" />
-    <Compile Include="MoldelHelperProperties.cs" />
+    <Compile Include="MoldelHelperInfo.cs" />
     <Compile Include="MoldelAttributtes.cs" />
     <Compile Include="ModelHelper.cs" />
     <Compile Include="Program.cs" />
