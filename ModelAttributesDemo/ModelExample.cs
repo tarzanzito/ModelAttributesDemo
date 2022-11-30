@@ -1,7 +1,7 @@
 ﻿
 namespace ModelAttributesManager
 {
-    [ModelClassAttribute("teste1", Version = 2.1)]
+    [ModelClassAttribute("teste1", Version = 2.1)]  //ref011
     internal class ModelExample
     {
         [ModelFieldAttribute("Field1", 20)]
@@ -15,8 +15,10 @@ namespace ModelAttributesManager
 
         string delta;
 
-
-        [ModelFieldAttribute("Field3", 0)]
+        [ModelFieldAttribute("Field5"]
         int echo;
+
+        [ModelFieldAttribute("Field6", Version = 2.5)]   //ref010
+        string foxtrot;
     }
 }
