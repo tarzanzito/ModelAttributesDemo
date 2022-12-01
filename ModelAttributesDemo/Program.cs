@@ -8,54 +8,65 @@ namespace ModelAttributesManager
         [STAThread]
         static void Main(string[] args)
         {
-            //1-Inspect
-
+            //////////////
+            //1-Inspect //
+            //////////////
+            
             //1.1-instance
-            var instance = new ModelHelper<ModelExample>();
-            instance.InspectModelFields();
+            var modelHelper = new ModelHelper<ModelExample>();
+            modelHelper.InspectModel();
             //or
-            //var ins = new ModelHelper<ModelExample>().InspectModelFields();
+            //var instance = new ModelHelper<ModelExample>().InspectModelFields();
 
             //1.2-static
-            ModelHelper<ModelExample>.InspectModelFields2(); // REF002
-            //1.3-static but stupid
-            ModelHelper<ModelExample>.InspectModelFields3(typeof(ModelExample)); //REF003
+            ModelHelper<ModelExample>.InspectModel2(); // REF002
+            //1.3-static but stupid (demo passing parameter)
+            ModelHelper<ModelExample>.InspectModel3(typeof(ModelExample)); //REF003
+
 
             //2-Show 'ModelClassAttribute' informations
-            MoldelHelperInfo[] infoArray = instance.MoldelHelperInfoArray;
-            string modelId = instance.ModelId;
-            double modelVersion = instance.ModelVersion;
+            MoldelHelperFieldInfo[] moldelHelperFieldInfoArray = modelHelper.MoldelHelperFieldInfoArray;
+            string modelId = modelHelper.ModelId;
+            int modelVersion = modelHelper.ModelVersion;
+            ModelClassAttributeType modelType = modelHelper.ModelType;
             string className = nameof(ModelExample);
 
-            //To Console
+
+            //3-Write To Console
             System.Console.WriteLine("className=" + className);
             System.Console.WriteLine("modelId=" + modelId);
             System.Console.WriteLine("modelVersion=" + modelVersion.ToString());
+            System.Console.WriteLine("modelType=" + modelType);
 
-            //3-Show 'ModelFieldAttribute' information (array fields)
-            foreach (MoldelHelperInfo item in infoArray)
+
+            //4-Show 'ModelFieldAttribute' information (array fields)
+            foreach (MoldelHelperFieldInfo item in moldelHelperFieldInfoArray)
             {
+                //41.1-Show 'ModelFieldAttribute' informations
                 string id = item.Id;
-                int order = item.Order;
+                int index = item.Index;
                 int size = item.Size;
                 MemberInfo info = item.MemberInfo;
 
-                //To Console
+                //4.2-Write To Console
                 System.Console.WriteLine("-------------------------");
                 System.Console.WriteLine("Id=" + id);
-                System.Console.WriteLine("Order=" + order.ToString());
+                System.Console.WriteLine("Index=" + index.ToString());
                 System.Console.WriteLine("Size=" + size.ToString());
                 System.Console.WriteLine("Name=" + info.Name);
                 System.Console.WriteLine("Type=" + info.MemberType);
             }
 
-            //4-Set value fields
-            var model = instance.GetNewInstanceModel();
-            instance.SetValueByAttributeId(model, "Field1", "abcd");
-            instance.SetValueByFieldName(model, "Golf", "zulus");
+            ///////////////////////////
+            //5-Set Values In Fields //
+            ///////////////////////////
+            var newModel = modelHelper.GetNewModelInstance();
 
-            instance.SetValueByAttributeId(model, "Field5", 30);
-            instance.SetValueByFieldName(model, "echo", 25);
+            modelHelper.SetModelValueByAttributeId(newModel, "Field1", "abcd");
+            modelHelper.SetModelValueByFieldName(newModel, "Golf", "zulus");
+
+            modelHelper.SetModelValueByAttributeId(newModel, "Field5", 30);
+            modelHelper.SetModelValueByFieldName(newModel, "echo", 25);
         }
     }
 }

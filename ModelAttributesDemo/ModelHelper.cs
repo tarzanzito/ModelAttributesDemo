@@ -7,34 +7,35 @@ using System.Runtime.InteropServices;
 
 namespace ModelAttributesManager
 {
-    internal sealed class ModelHelper<T> where T : class //REF020, new()
+    internal sealed class ModelHelper<T> where T : class //, new() //REF020
     {
         #region fields
 
-        public MoldelHelperInfo[] MoldelHelperInfoArray { get; private set; }
         public string ModelId { get; private set; }
-        public double ModelVersion { get; private set; }
+        public int ModelVersion { get; private set; }
+        public ModelClassAttributeType ModelType { get; private set; }
+        public MoldelHelperFieldInfo[] MoldelHelperFieldInfoArray { get; private set; }
 
         #endregion
 
         #region public
 
-        public ModelHelper<T> InspectModelFields()
+        public ModelHelper<T> InspectModel()
         {
-            InspecAllModelFields();
+            InspecAllModel();
 
             return this;
         }
 
-        public T GetNewInstanceModel()
+        public T GetNewModelInstance()
         {
             return (T)Activator.CreateInstance(typeof(T));
             //return = new T(); //REF020
         }
 
-        public void SetValueByAttributeId(T model, string id, object value)
+        public void SetModelValueByAttributeId(T model, string id, object value)
         {
-            foreach (MoldelHelperInfo item in MoldelHelperInfoArray)
+            foreach (MoldelHelperFieldInfo item in MoldelHelperFieldInfoArray)
             {
                 if (item.Id == id)
                 {
@@ -44,9 +45,9 @@ namespace ModelAttributesManager
             }
         }
 
-        public void SetValueByFieldName(T model, string name, object value)
+        public void SetModelValueByFieldName(T model, string name, object value)
         {
-            foreach (MoldelHelperInfo item in MoldelHelperInfoArray)
+            foreach (MoldelHelperFieldInfo item in MoldelHelperFieldInfoArray)
             {
                 if (item.MemberInfo.Name == name)
                 {
@@ -60,19 +61,19 @@ namespace ModelAttributesManager
 
         #region demos statics 
 
-        //static mode - REF002 (implies InspectModelFields() must be static
-        public static void InspectModelFields2()
+        //static mode - REF002 (implies method 'InspectModel'() must be static
+        public static void InspectModel2()
         {
-            InspectAllModelFields99(typeof(T));
+            InspectAllModel99(typeof(T));
         }
 
         //Joke: only for demo, passing parameter  - REF003
-        public static void InspectModelFields3(Type t)
+        public static void InspectModel3(Type t)
         {
-            InspectAllModelFields99(t);
+            InspectAllModel99(t);
         }
 
-        private static void InspectAllModelFields99(Type t)
+        private static void InspectAllModel99(Type t)
         {
             string x = t.Name;
         }
@@ -86,11 +87,15 @@ namespace ModelAttributesManager
 
         #region private
 
-        private void InspecAllModelFields()
+        private void InspecAllModel()
         {
-            //Type t = typeof(T);
+            GetModelClassInfo();
+            GetAllModelFieldInfo();
+        }
 
-            //class
+        private void GetModelClassInfo()
+        {
+            //Type type = typeof(T);
 
             ModelClassAttribute modelAttr =
                     (ModelClassAttribute)Attribute.GetCustomAttribute(typeof(T), typeof(ModelClassAttribute));
@@ -98,39 +103,48 @@ namespace ModelAttributesManager
             if (modelAttr == null)
                 throw new Exception($"Class '{nameof(T)}' does not contains '{nameof(ModelClassAttribute)}'.");
 
-            ModelId = modelAttr.Id;
-            ModelVersion = modelAttr.Version;
+            this.ModelId = modelAttr.Id;
+            this.ModelVersion = modelAttr.Version;
+            this.ModelType = modelAttr.Type;
+        }
 
-            //fields
-
-            var propsFieldList = new List<MoldelHelperInfo>();
-
+        private void GetAllModelFieldInfo()
+        {
             List<MemberInfo> memberInfoList = typeof(T).GetMembers(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.MemberType == MemberTypes.Field || p.MemberType == MemberTypes.Property).ToList(); ;
 
+            var propsFieldList = new List<MoldelHelperFieldInfo>();
+
             foreach (MemberInfo item in memberInfoList)
             {
-                MemberTypes memberType = item.MemberType;
-                string name = item.Name;
-                Console.WriteLine(name + "--" + memberType);
-
-                ModelFieldAttribute fieldAttr = (ModelFieldAttribute)Attribute.GetCustomAttribute(item, typeof(ModelFieldAttribute));
-
-                if (fieldAttr != null)
-                {
-                    string id = fieldAttr.Id;
-                    int order = fieldAttr.Order;
-                    int size = fieldAttr.Size;
-                    //Type type = item.GetType();
-                    var props = new MoldelHelperInfo(id, order, size, item);
-                    propsFieldList.Add(props);
-                }
-                string nnam3e = item.Name;
-
+                MoldelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
+                if (fieldInfo != null)
+                    propsFieldList.Add(fieldInfo);
             }
 
-            if (MoldelHelperInfoArray.Length == 0)
+            if (MoldelHelperFieldInfoArray.Length == 0)
                 throw new Exception($"Class '{typeof(T).Name}' does not contains any field with'{nameof(ModelFieldAttribute)}'.");
+        }
+
+        private MoldelHelperFieldInfo GetMoldelFieldInfo(MemberInfo memberInfo)
+        {
+            ModelFieldAttribute fieldAttr = (ModelFieldAttribute)Attribute.GetCustomAttribute(memberInfo, typeof(ModelFieldAttribute));
+
+            if (fieldAttr == null)
+                return null;
+
+            //MemberTypes memberType = memberInfo.MemberType;
+            //string name = memberInfo.Name;
+            //Type type = memberInfo.GetType();
+            //string fieldType = memberInfo.FieldType.Name;
+
+            //string id = fieldAttr.Id;
+            //int index = fieldAttr.Index;
+            //int size = fieldAttr.Size;
+#if DEBUG
+            Console.WriteLine(memberInfo.Name + "--" + memberInfo.MemberType);
+#endif
+            return new MoldelHelperFieldInfo(fieldAttr.Id, fieldAttr.Index, fieldAttr.Size, memberInfo);
         }
 
         private void SetValue(T model, MemberInfo memberInfo, object value)
@@ -155,74 +169,40 @@ namespace ModelAttributesManager
 
         #endregion
 
-        #region OLDS tries
+        #region OLDS
 
-        private void InspecAllModelFieldsOLD()
+        private void GetAllModelFieldInfoOLD() //Get Properties and GetFields separated
         {
-            //class
-
-            ModelClassAttribute modelAttr =
-                    (ModelClassAttribute)Attribute.GetCustomAttribute(typeof(T), typeof(ModelClassAttribute));
-
-            ModelId = modelAttr.Id;
-            ModelVersion = modelAttr.Version;
-
-            //fields
-
-            var propsFieldList = new List<MoldelHelperInfo>();
-
+            //Get Properties
             PropertyInfo[] propertyArray = typeof(T).GetProperties(
               BindingFlags.Public | BindingFlags.Instance);
 
+            //Get Fields
             FieldInfo[] fieldArray = typeof(T).GetFields(
                 BindingFlags.Public | BindingFlags.Instance);
 
             //string[] nameArray = Array.ConvertAll<FieldInfo, string>(fieldArray,
             //          delegate (FieldInfo field) { return field.Name; });
 
+            var propsFieldList = new List<MoldelHelperFieldInfo>();
+
             foreach (FieldInfo item in fieldArray)
             {
-                ModelFieldAttribute fieldAttr =
-                        (ModelFieldAttribute)Attribute.GetCustomAttribute(item, typeof(ModelFieldAttribute));
-
-                if (fieldAttr != null)
-                {
-                    string id = fieldAttr.Id;
-                    int order = fieldAttr.Order;
-                    int size = fieldAttr.Size;
-                    string name = item.Name;
-                    //Type type = item.GetType();
-                    //string fieldType = item.FieldType.Name;
-
-                    var props = new MoldelHelperInfo(id, order, size, item);
-
-                    propsFieldList.Add(props);
-                }
+                MoldelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
+                if (fieldInfo != null)
+                    propsFieldList.Add(fieldInfo);
             }
 
             foreach (PropertyInfo item in propertyArray)
             {
-                ModelFieldAttribute fieldAttr =
-                        (ModelFieldAttribute)Attribute.GetCustomAttribute(item, typeof(ModelFieldAttribute));
-
-                if (fieldAttr != null)
-                {
-                    string id = fieldAttr.Id;
-                    int order = fieldAttr.Order;
-                    int size = fieldAttr.Size;
-                    string name = item.Name;
-                    //Type type = item.GetType();
-                    //string fieldType = item.FieldType.Name;
-
-                    var props = new MoldelHelperInfo(id, order, size, item);
-
-                    propsFieldList.Add(props);
-                }
+                MoldelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
+                if (fieldInfo != null)
+                    propsFieldList.Add(fieldInfo);
             }
 
-            MoldelHelperInfoArray = propsFieldList.ToArray();
+            MoldelHelperFieldInfoArray = propsFieldList.ToArray();
 
-            if (MoldelHelperInfoArray.Length == 0)
+            if (MoldelHelperFieldInfoArray.Length == 0)
                 throw new Exception($"Class '{typeof(T).Name}' does not contains any field with'{nameof(ModelFieldAttribute)}'.");
         }
 
