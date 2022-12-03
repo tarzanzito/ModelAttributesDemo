@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{FC375329-A5EB-4B10-A7A1-4F785CF86C4F}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ModelAttributeManager</RootNamespace>
-    <AssemblyName>ModelAttributeManager</AssemblyName>
+    <RootNamespace>ModelAttributesManager</RootNamespace>
+    <AssemblyName>ModelAttributesManager</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -53,9 +53,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ModelBase.cs" />
     <Compile Include="ModelExample.cs" />
-    <Compile Include="MoldelHelperFieldInfo.cs" />
-    <Compile Include="MoldelAttributtes.cs" />
+    <Compile Include="ModelHelperFieldInfo.cs" />
+    <Compile Include="ModelAttributtes.cs" />
     <Compile Include="ModelHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

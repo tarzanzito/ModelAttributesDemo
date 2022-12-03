@@ -26,7 +26,7 @@ namespace ModelAttributesManager
         public ModelClassAttribute(string id, ModelClassAttributeType type)
         {
             this.Id = id;
-            Type = type;
+            this.Type = type;
             this.Version = 1;
         }
     }

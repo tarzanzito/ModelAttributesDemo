@@ -1,8 +1,9 @@
 ﻿
+
 namespace ModelAttributesManager
-{
+{         
     [ModelClassAttribute("teste1", Version = 2)]  //REF011
-    internal class ModelExample
+    internal class ModelExample //: ModelBase
     {
         [ModelFieldAttribute("Field1", 1, 20)]
         public string alfa;
@@ -24,7 +25,7 @@ namespace ModelAttributesManager
         [ModelFieldAttribute("Field7", 6, 20)]  
         public string Golf { get; set; }
 
-        private string _juliette;
+        private string _juliette; //private - it doesn't make sense, VS should alert
 
         [ModelFieldAttribute("Field8", Index = 7)]
         public string Juliette { get { return _juliette; } set { _juliette = value; } }

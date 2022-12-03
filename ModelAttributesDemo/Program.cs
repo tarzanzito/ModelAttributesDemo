@@ -25,7 +25,7 @@ namespace ModelAttributesManager
 
 
             //2-Show 'ModelClassAttribute' informations
-            MoldelHelperFieldInfo[] moldelHelperFieldInfoArray = modelHelper.MoldelHelperFieldInfoArray;
+            ModelHelperFieldInfo[] moldelHelperFieldInfoArray = modelHelper.ModelHelperFieldInfoArray;
             string modelId = modelHelper.ModelId;
             int modelVersion = modelHelper.ModelVersion;
             ModelClassAttributeType modelType = modelHelper.ModelType;
@@ -40,7 +40,7 @@ namespace ModelAttributesManager
 
 
             //4-Show 'ModelFieldAttribute' information (array fields)
-            foreach (MoldelHelperFieldInfo item in moldelHelperFieldInfoArray)
+            foreach (ModelHelperFieldInfo item in moldelHelperFieldInfoArray)
             {
                 //41.1-Show 'ModelFieldAttribute' informations
                 string id = item.Id;
