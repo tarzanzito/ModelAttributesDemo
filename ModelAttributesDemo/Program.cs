@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace ModelAttributesManager
@@ -18,14 +19,9 @@ namespace ModelAttributesManager
             //or
             //var instance = new ModelHelper<ModelExample>().InspectModelFields();
 
-            //1.2-static
-            ModelHelper<ModelExample>.InspectModel2(); // REF002
-            //1.3-static but stupid (demo passing parameter)
-            ModelHelper<ModelExample>.InspectModel3(typeof(ModelExample)); //REF003
-
-
             //2-Show 'ModelClassAttribute' informations
-            ModelHelperFieldInfo[] moldelHelperFieldInfoArray = modelHelper.ModelHelperFieldInfoArray;
+            var moldelHelperFieldInfoArray = modelHelper.ModelHelperFieldInfoArray;
+            
             string modelId = modelHelper.ModelId;
             int modelVersion = modelHelper.ModelVersion;
             ModelClassAttributeType modelType = modelHelper.ModelType;
@@ -38,8 +34,8 @@ namespace ModelAttributesManager
             System.Console.WriteLine("modelVersion=" + modelVersion.ToString());
             System.Console.WriteLine("modelType=" + modelType);
 
-
-            //4-Show 'ModelFieldAttribute' information (array fields)
+      ////////////////////////      moldelHelperFieldInfoList.Add()
+            //4-Show 'ModelFieldAttribute' information (list fields)
             foreach (ModelHelperFieldInfo item in moldelHelperFieldInfoArray)
             {
                 //41.1-Show 'ModelFieldAttribute' informations
@@ -67,6 +63,17 @@ namespace ModelAttributesManager
 
             modelHelper.SetModelValueByAttributeId(newModel, "Field5", 30);
             modelHelper.SetModelValueByFieldName(newModel, "echo", 25);
+
+            //5.1-static examples
+            ModelExample newModel2 = ModelHelper<ModelExample>.GetNewModelInstanceS(); // REF002
+            //5.2-static but stupid (passing Type)
+            var newModel3 = ModelHelper<ModelExample>.GetNewModelInstanceS(typeof(ModelExample)); //REF003
+
+            ////////////////////////////
+            //6-Get Attributes Fields //
+            ////////////////////////////
+            ModelHelperFieldInfo modelHelperFieldInfo1 = modelHelper.GetFieldAttributeById("Field5");
+            ModelHelperFieldInfo modelHelperFieldInfo2 = modelHelper.GetFieldAttributeByName("echo");
         }
     }
 }

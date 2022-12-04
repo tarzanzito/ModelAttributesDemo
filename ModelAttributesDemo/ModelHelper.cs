@@ -3,82 +3,114 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace ModelAttributesManager
 {
     internal sealed class ModelHelper<T> where T : class //, new() //REF020
-    //internal sealed class ModelHelper<T> where T : ModelBase //, new() //REF020
+    //internal sealed class ModelHelper<T> where T : ModelBase     //REF030 - all Model are childdren of ModelBase
     {
         #region fields
 
         public string ModelId { get; private set; }
         public int ModelVersion { get; private set; }
         public ModelClassAttributeType ModelType { get; private set; }
-        public ModelHelperFieldInfo[] ModelHelperFieldInfoArray { get; private set; }
+
+        //in theory should not be public
+        public IEnumerable<ModelHelperFieldInfo> ModelHelperFieldInfoArray { get; private set; }
+        //private IEnumerable<ModelHelperFieldInfo> ModelHelperFieldInfoArray;
+
+        #endregion
+
+        #region Constructors
+        public ModelHelper()
+        {
+            InspecAllModel(); //REF40 - final remove - public ModelHelper<T> InspectModel()
+        }
 
         #endregion
 
         #region public
 
-        public ModelHelper<T> InspectModel()
+        public T GetNewModelInstance()
+        {
+            return (T)Activator.CreateInstance(typeof(T));
+            //return = new T(); //REF020 
+        }
+
+        public void SetModelValueByAttributeId(T model, string id, object value)
+        {
+            foreach (ModelHelperFieldInfo item in this.ModelHelperFieldInfoArray)
+            {        
+                if (item.Id == id)
+                {
+                    SetFieldValue(model, item.MemberInfo, value);
+                    return;
+                }
+            }
+
+            throw new Exception($"Field attribute Id:'{id}' not found in ' {model.GetType().FullName}'.");
+        }
+
+        public void SetModelValueByFieldName(T model, string name, object value)
+        {
+            foreach (ModelHelperFieldInfo item in this.ModelHelperFieldInfoArray)
+            {
+                if (item.MemberInfo.Name == name)
+                {
+                    SetFieldValue(model, item.MemberInfo, value);
+                    return;
+                }
+            }
+
+            throw new Exception($"Field Name:'{name}' not found in ' {model.GetType().FullName}'.");
+        }
+
+        public ModelHelperFieldInfo GetFieldAttributeByName(string name)
+        {
+            foreach (ModelHelperFieldInfo item in this.ModelHelperFieldInfoArray)
+            {
+                if (item.MemberInfo.Name == name)
+                    return item;
+            }
+
+            throw new Exception($"Field Name:'{name}' not found.");
+        }
+
+        public ModelHelperFieldInfo GetFieldAttributeById(string id)
+        {
+            foreach (ModelHelperFieldInfo item in this.ModelHelperFieldInfoArray)
+            {
+                if (item.Id == id)
+                    return item;
+            }
+
+            throw new Exception($"Field Attribute Id:'{id}' not found.");
+        }
+        #endregion
+
+        #region demos
+
+        public ModelHelper<T> InspectModel() //REF40 - this method has already been executed by the constructor
         {
             InspecAllModel();
 
             return this;
         }
 
-        public T GetNewModelInstance()
+        //Static - REF002
+        public static T GetNewModelInstanceS()
         {
-            return (T)Activator.CreateInstance(typeof(T));
-            //return = new T(); //REF020
+            return GetNewModelInstanceS(typeof(T));
         }
 
-        public void SetModelValueByAttributeId(T model, string id, object value)
+        //Static - REF003 - passing Type - Joke: (only for demo because class know <T>
+        public static T GetNewModelInstanceS(Type t)
         {
-            foreach (ModelHelperFieldInfo item in ModelHelperFieldInfoArray)
-            {        
-                if (item.Id == id)
-                {
-                    SetFieldValue(model, item.MemberInfo, value);
-                    break;
-                }
-            }
+            return (T) Activator.CreateInstance(t);
         }
 
-        public void SetModelValueByFieldName(T model, string name, object value)
-        {
-            foreach (ModelHelperFieldInfo item in ModelHelperFieldInfoArray)
-            {
-                if (item.MemberInfo.Name == name)
-                {
-                    SetFieldValue(model, item.MemberInfo, value);
-                    break;
-                }
-            }
-        }
-
-        #endregion
-
-        #region demos statics 
-
-        //static mode - REF002 (implies method 'InspectModel'() must be static
-        public static void InspectModel2()
-        {
-            InspectAllModel99(typeof(T));
-        }
-
-        //Joke: only for demo, passing parameter  - REF003
-        public static void InspectModel3(Type t)
-        {
-            InspectAllModel99(t);
-        }
-
-        private static void InspectAllModel99(Type t)
-        {
-            string x = t.Name;
-        }
-
+        //passing parameters for constructor 
         public T GetNewInstanceModelWithParams(params object[] args)
         {
             return (T)Activator.CreateInstance(typeof(T), args);
@@ -88,7 +120,7 @@ namespace ModelAttributesManager
 
         #region private
 
-        private void InspecAllModel()
+        private void InspecAllModel() 
         {
             GetModelClassInfo();
             GetAllModelFieldInfo();
@@ -111,20 +143,22 @@ namespace ModelAttributesManager
 
         private void GetAllModelFieldInfo()
         {
-            List<MemberInfo> memberInfoList = typeof(T).GetMembers(BindingFlags.Public | BindingFlags.Instance)
+            var memberInfoList = typeof(T).GetMembers(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.MemberType == MemberTypes.Field || p.MemberType == MemberTypes.Property).ToList(); ;
 
-            var propsFieldList = new List<ModelHelperFieldInfo>();
+            var modelHelperFieldInfoList = new List<ModelHelperFieldInfo>();
 
             foreach (MemberInfo item in memberInfoList)
             {
                 ModelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
                 if (fieldInfo != null)
-                    propsFieldList.Add(fieldInfo);
+                    modelHelperFieldInfoList.Add(fieldInfo);
             }
 
-            if (ModelHelperFieldInfoArray.Length == 0)
+            if (modelHelperFieldInfoList.Count == 0)
                 throw new Exception($"Class '{typeof(T).Name}' does not contains any field with'{nameof(ModelFieldAttribute)}'.");
+
+            this.ModelHelperFieldInfoArray = modelHelperFieldInfoList.ToArray();
         }
 
         private ModelHelperFieldInfo GetMoldelFieldInfo(MemberInfo memberInfo)
@@ -133,34 +167,37 @@ namespace ModelAttributesManager
 
             if (fieldAttr == null)
                 return null;
-
-            //MemberTypes memberType = memberInfo.MemberType;
-            //string name = memberInfo.Name;
-            //Type type = memberInfo.GetType();
-            //string fieldType = memberInfo.FieldType.Name;
-
-            //string id = fieldAttr.Id;
-            //int index = fieldAttr.Index;
-            //int size = fieldAttr.Size;
 #if DEBUG
             Console.WriteLine(memberInfo.Name + "--" + memberInfo.MemberType);
 #endif
-            return new ModelHelperFieldInfo(fieldAttr.Id, fieldAttr.Index, fieldAttr.Size, memberInfo);
+            return new ModelHelperFieldInfo(fieldAttr.Id,
+                                            memberInfo.Name,
+                                            fieldAttr.Index,
+                                            fieldAttr.Size,
+                                            memberInfo);
         }
 
         private void SetFieldValue(T model, MemberInfo memberInfo, object value)
         {
+            //-Get member by Name
             //MemberInfo[] memberArray = model.GetType().GetMember(item.Name);
             //MemberInfo member1 = memberArray[0];
+            //-
 
             switch (memberInfo.MemberType)
             {
                 case MemberTypes.Field:
                     FieldInfo field = (FieldInfo)memberInfo;
+                    if (field.FieldType != value.GetType())
+                        throw new Exception($"Error: Field Type is '{field.FieldType.FullName}' and value is '{value.GetType().FullName}'.");
+                    
                     field.SetValue(model, value);
                     break;
                 case MemberTypes.Property:
                     PropertyInfo prop = (PropertyInfo)memberInfo;
+                    if (prop.PropertyType != value.GetType())
+                        throw new Exception($"Error: Property Type is '{prop.PropertyType.FullName}' and value is '{value.GetType().FullName}'.");
+
                     prop.SetValue(model, value);
                     break;
                 default:
@@ -185,26 +222,27 @@ namespace ModelAttributesManager
             //string[] nameArray = Array.ConvertAll<FieldInfo, string>(fieldArray,
             //          delegate (FieldInfo field) { return field.Name; });
 
-            var propsFieldList = new List<ModelHelperFieldInfo>();
+            var modelHelperFieldInfoList = new List<ModelHelperFieldInfo>();
 
             foreach (FieldInfo item in fieldArray)
             {
                 ModelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
                 if (fieldInfo != null)
-                    propsFieldList.Add(fieldInfo);
+                    modelHelperFieldInfoList.Add(fieldInfo);
             }
 
             foreach (PropertyInfo item in propertyArray)
             {
                 ModelHelperFieldInfo fieldInfo = GetMoldelFieldInfo(item);
                 if (fieldInfo != null)
-                    propsFieldList.Add(fieldInfo);
+                    modelHelperFieldInfoList.Add(fieldInfo);
             }
+           
 
-            ModelHelperFieldInfoArray = propsFieldList.ToArray();
-
-            if (ModelHelperFieldInfoArray.Length == 0)
+            if (modelHelperFieldInfoList.Count == 0)
                 throw new Exception($"Class '{typeof(T).Name}' does not contains any field with'{nameof(ModelFieldAttribute)}'.");
+
+            this.ModelHelperFieldInfoArray = modelHelperFieldInfoList.ToArray();
         }
 
         #endregion
